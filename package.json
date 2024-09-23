@@ -3,8 +3,9 @@
   "version": "2.1.7",
   "description": "iRacing SDK implementation for Node.js",
   "main": "src/node-irsdk.js",
+  "type": "module",
   "scripts": {
-    "install": "prebuild-install || node-gyp rebuild",
+    "install": "prebuild-install || node-gyp rebuild --target=27.0.0 --arch=x64 --dist-url=https://electronjs.org/headers",
     "prebuild": "prebuild --all --strip",
     "prebuild-upload": "prebuild --all --strip -u %GH_TOKEN%",
     "test": "npm run lint && npm run mocha",
@@ -17,11 +18,11 @@
   "keywords": [
     "iracing"
   ],
-  "author": "Antti Pihlaja",
+  "author": "Antti Pihlaja & Jon Rapp",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/apihlaja/node-irsdk.git"
+    "url": "https://github.com/jmrapp1/node-irsdk.git"
   },
   "engines": {
     "node": "20.16.0"
@@ -29,8 +30,8 @@
   "dependencies": {
     "js-yaml": "3.*",
     "nan": "2.20.0",
-    "prebuild-install": "^5.0.0",
     "path": "^0.12.7",
+    "prebuild-install": "^5.0.0",
     "stream": "^0.0.3"
   },
   "devDependencies": {
@@ -39,7 +40,6 @@
     "jsdoc-to-markdown": "^5.0.0",
     "mocha": "^6.1.4",
     "moment": "^2.19.3",
-    "node-gyp": "^10.2.0",
     "prebuild": "9.0.1",
     "sandboxed-module": "2.0.*",
     "sinon": "^7.3.2",

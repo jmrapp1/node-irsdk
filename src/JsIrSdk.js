@@ -1,5 +1,7 @@
-var events = require('events')
-var Consts = require('./IrSdkConsts')
+import * as events from 'events';
+import * as Consts from './IrSdkConsts';
+import * as yaml from 'js-yaml';
+
 var BroadcastMsg = Consts.BroadcastMsg
 
 /** Default parser used for SessionInfo YAML
@@ -9,8 +11,6 @@ var BroadcastMsg = Consts.BroadcastMsg
   @returns {Object} parsed session info or falsy
 */
 function createSessionInfoParser () {
-  var yaml = require('js-yaml')
-
   return function (sessionInfoStr) {
     var fixedYamlStr = sessionInfoStr.replace(/TeamName: ([^\n]+)/g, function (match, p1) {
       if ((p1[0] === '"' && p1[p1.length - 1] === '"') ||
@@ -39,8 +39,6 @@ function createSessionInfoParser () {
   @fires iracing#Telemetry
   @fires iracing#TelemetryDescription
   @fires iracing#SessionInfo
-
-  @example var iracing = require('node-irsdk').getInstance()
 */
 export class JsIrSdk extends events.EventEmitter {
 

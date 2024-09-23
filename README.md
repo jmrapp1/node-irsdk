@@ -9,10 +9,16 @@
 Unofficial [iRacing](http://www.iracing.com/) SDK implementation for Node.js. 
 
 # IMPORTANT
-THIS ONLY SUPPORTS ELECTRON 32.0.0 WHICH USES:
+THIS ONLY SUPPORTS ELECTRON 27.0.0 WHICH USES:
 - NODE 20.16.0
-- V8 12.8
-as defined [here](https://www.electronjs.org/blog/electron-32-0)
+- V8 11.8
+as defined [here](https://www.electronjs.org/blog/electron-27-0)
+
+### Building
+
+When building for electron its important that the node module version used to build the `.node` output matches
+what Electron is using. In the package.json `install` script the `node-gyp` command targets the electron version
+and 64bit architecture. Make sure that version matches what version of Electron you're running.
 
 ---
 

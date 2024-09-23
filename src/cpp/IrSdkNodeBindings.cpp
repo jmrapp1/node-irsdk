@@ -108,36 +108,36 @@ NAN_METHOD(sendCmd)
 
   switch (info.Length())
   {
-  case 1:
-    broadcastCmd(
-        info[0]->Int32Value(Nan::GetCurrentContext()).FromJust(),
-        0,
-        0);
-    break;
-  case 2:
-    broadcastCmd(
-        info[0]->Int32Value(Nan::GetCurrentContext()).FromJust(),
-        info[1]->Int32Value(Nan::GetCurrentContext()).FromJust(),
-        0);
-    break;
-  case 3:
-    broadcastCmd(
-        info[0]->Int32Value(Nan::GetCurrentContext()).FromJust(),
-        info[1]->Int32Value(Nan::GetCurrentContext()).FromJust(),
-        info[2]->Int32Value(Nan::GetCurrentContext()).FromJust());
-    break;
-  case 4:
-    broadcastCmd(
-        info[0]->Int32Value(Nan::GetCurrentContext()).FromJust(),
-        info[1]->Int32Value(Nan::GetCurrentContext()).FromJust(),
-        info[2]->Int32Value(Nan::GetCurrentContext()).FromJust(),
-        info[3]->Int32Value(Nan::GetCurrentContext()).FromJust());
-    break;
+    case 1:
+      broadcastCmd(
+          info[0]->Int32Value(Nan::GetCurrentContext()).FromJust(),
+          0,
+          0);
+      break;
+    case 2:
+      broadcastCmd(
+          info[0]->Int32Value(Nan::GetCurrentContext()).FromJust(),
+          info[1]->Int32Value(Nan::GetCurrentContext()).FromJust(),
+          0);
+      break;
+    case 3:
+      broadcastCmd(
+          info[0]->Int32Value(Nan::GetCurrentContext()).FromJust(),
+          info[1]->Int32Value(Nan::GetCurrentContext()).FromJust(),
+          info[2]->Int32Value(Nan::GetCurrentContext()).FromJust());
+      break;
+    case 4:
+      broadcastCmd(
+          info[0]->Int32Value(Nan::GetCurrentContext()).FromJust(),
+          info[1]->Int32Value(Nan::GetCurrentContext()).FromJust(),
+          info[2]->Int32Value(Nan::GetCurrentContext()).FromJust(),
+          info[3]->Int32Value(Nan::GetCurrentContext()).FromJust());
+      break;
+    }
   }
-}
 
-static void cleanUp(void *arg)
-{
-  irsdk.shutdown();
-}
+  static void cleanUp(void *arg)
+  {
+    irsdk.shutdown();
+  }
 } // namespace NodeIrSdk

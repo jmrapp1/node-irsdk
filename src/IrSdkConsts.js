@@ -3,8 +3,7 @@
 
   @namespace
   @constant
-  @example var IrSdkConsts = require('node-irsdk').getInstance().Consts
- */
+  */
 var IrSdkConsts = {
   /**
     Available command messages.
