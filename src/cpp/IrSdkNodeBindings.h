@@ -26,7 +26,7 @@ namespace NodeIrSdk {
   void getTelemetry(const Nan::FunctionCallbackInfo<v8::Value>& args);
 
   void getTelemetryDescription(const Nan::FunctionCallbackInfo<v8::Value>& args);
-  
+
   NAN_METHOD(sendCmd);
 
   static void cleanUp(void* arg);
@@ -36,7 +36,8 @@ namespace NodeIrSdk {
   {
     irsdk.startup();
 
-    node::AtExit(cleanUp);
+    v8::Isolate*  isolate = v8::Isolate::GetCurrent();
+    node::AtExit(node::GetCurrentEnvironment(isolate->GetCurrentContext()), cleanUp, nullptr);
 
     NAN_EXPORT(target, start);
     NAN_EXPORT(target, shutdown);
@@ -50,7 +51,7 @@ namespace NodeIrSdk {
     NAN_EXPORT(target, updateTelemetry);
     NAN_EXPORT(target, getTelemetryDescription);
     NAN_EXPORT(target, getTelemetry);
-    
+
     NAN_EXPORT(target, sendCmd);
   }
 

@@ -1,4 +1,3 @@
-var util = require('util')
 var events = require('events')
 var Consts = require('./IrSdkConsts')
 var BroadcastMsg = Consts.BroadcastMsg
@@ -43,8 +42,61 @@ function createSessionInfoParser () {
 
   @example var iracing = require('node-irsdk').getInstance()
 */
-function JsIrSdk (IrSdkWrapper, opts) {
-  events.EventEmitter.call(this)
+export class JsIrSdk extends events.EventEmitter {
+
+  parseSessionInfo;
+  connected = false;
+  startIntervalId;
+  IrSdkWrapper;
+  self;
+
+  constructor(IrSdkWrapper, opts) {
+    super()
+    this.IrSdkWrapper = IrSdkWrapper;
+    this.opts = opts;
+    this.self = this;
+
+    events.EventEmitter.call(this)
+
+    this.parseSessionInfo = opts.sessionInfoParser
+    if (!this.parseSessionInfo) this.parseSessionInfo = createSessionInfoParser()
+
+
+    this.startIntervalId = setInterval(function () {
+      if (!IrSdkWrapper.isInitialized()) {
+        IrSdkWrapper.start()
+      }
+    }, 10000)
+
+    this.on('update', evt => {
+      // fire old events as well.
+      const timestamp = evt.timestamp
+      const data = evt.data
+      const type = evt.type
+
+      switch (type) {
+        case 'SessionInfo':
+          this.emit('SessionInfo', {timestamp, data})
+          break
+        case 'Telemetry':
+          this.emit('Telemetry', {timestamp, values: data})
+          break
+        case 'TelemetryDescription':
+          this.emit('TelemetryDescription', data)
+          break
+        case 'Connected':
+          this.emit('Connected')
+          break
+        case 'Disconnected':
+          this.emit('Disconnected')
+          break
+        default:
+          break
+      }
+    })
+
+    IrSdkWrapper.start()
+  }
 
   /** Execute any of available commands, excl. FFB command
     @method
@@ -53,18 +105,18 @@ function JsIrSdk (IrSdkWrapper, opts) {
     @param {Integer} [arg2] 2nd argument
     @param {Integer} [arg3] 3rd argument
   */
-  this.execCmd = IrSdkWrapper.sendCmd
+  execCmd = this.IrSdkWrapper.sendCmd
 
   /** iRacing SDK related constants
     @type IrSdkConsts
     @instance
   */
-  this.Consts = Consts
+  Consts = Consts
 
   /** Camera controls
     @type {Object}
   */
-  this.camControls = {
+  camControls = {
     /** Change camera tool state
       @method
       @param {IrSdkConsts.CameraState} state new state
@@ -135,7 +187,7 @@ function JsIrSdk (IrSdkWrapper, opts) {
   /** Replay and playback controls
     @type {Object}
   */
-  this.playbackControls = {
+  playbackControls = {
     /** Play replay
       @method
       @example iracing.playbackControls.play()
@@ -232,7 +284,7 @@ function JsIrSdk (IrSdkWrapper, opts) {
     @method
     @example iracing.reloadTextures() // reload all paints
   */
-  this.reloadTextures = function () {
+  reloadTextures() {
     this.execCmd(BroadcastMsg.ReloadTextures, Consts.ReloadTexturesMode.All)
   }
 
@@ -241,7 +293,7 @@ function JsIrSdk (IrSdkWrapper, opts) {
     @param {Integer} carIdx car to reload
     @example iracing.reloadTexture(1) // reload paint of carIdx=1
   */
-  this.reloadTexture = function (carIdx) {
+  reloadTexture(carIdx) {
     this.execCmd(BroadcastMsg.ReloadTextures, Consts.ReloadTexturesMode.CarIdx, carIdx)
   }
 
@@ -250,7 +302,7 @@ function JsIrSdk (IrSdkWrapper, opts) {
     @param {Integer} [arg] Command argument, if needed
     @example iracing.execChatCmd('cancel') // close chat window
   */
-  this.execChatCmd = function (cmd, arg) {
+  execChatCmd(cmd, arg) {
     arg = arg || 0
     if (typeof cmd === 'string') {
       cmd = stringToEnum(cmd, Consts.ChatCommand)
@@ -264,7 +316,7 @@ function JsIrSdk (IrSdkWrapper, opts) {
     @param {Integer} num Macro's number (0-15)
     @example iracing.execChatMacro(1) // macro 1
   */
-  this.execChatMacro = function (num) {
+  execChatMacro(num) {
     this.execChatCmd('macro', num)
   }
 
@@ -278,7 +330,7 @@ function JsIrSdk (IrSdkWrapper, opts) {
     * iracing.execPitCmd('lf') // new left front
     * iracing.execPitCmd('lr', 200) // new left rear, 200 kPa
   */
-  this.execPitCmd = function (cmd, arg) {
+  execPitCmd(cmd, arg) {
     arg = arg || 0
     if (typeof cmd === 'string') {
       cmd = stringToEnum(cmd, Consts.PitCommand)
@@ -292,7 +344,7 @@ function JsIrSdk (IrSdkWrapper, opts) {
     @param {IrSdkConsts.TelemCommand} cmd Command: start/stop/restart
     @example iracing.execTelemetryCmd('restart')
   */
-  this.execTelemetryCmd = function (cmd) {
+  execTelemetryCmd(cmd) {
     if (typeof cmd === 'string') {
       cmd = stringToEnum(cmd, Consts.TelemCommand)
     }
@@ -301,47 +353,33 @@ function JsIrSdk (IrSdkWrapper, opts) {
     }
   }
 
-  var self = this
-  opts = opts || {}
-
   /**
    Parser for SessionInfo YAML
    @callback iracing~sessionInfoParser
    @param {String} sessionInfo SessionInfo YAML
    @returns {Object} parsed session info
   */
-  var parseSessionInfo = opts.sessionInfoParser
-  if (!parseSessionInfo) parseSessionInfo = createSessionInfoParser()
 
-  var connected = false // if irsdk is available
-
-  var startIntervalId = setInterval(function () {
-    if (!IrSdkWrapper.isInitialized()) {
-      IrSdkWrapper.start()
-    }
-  }, 10000)
-
-  IrSdkWrapper.start()
 
   /** Latest telemetry, may be null or undefined
 
   */
-  this.telemetry = null
+  telemetry = null
 
   /** Latest telemetry, may be null or undefined
 
   */
-  this.telemetryDescription = null
+  telemetryDescription = null
 
   /** Latest telemetry, may be null or undefined
 
   */
-  this.sessionInfo = null
+  sessionInfo = null
 
-  var checkConnection = function () {
-    if (IrSdkWrapper.isInitialized() && IrSdkWrapper.isConnected()) {
-      if (!connected) {
-        connected = true
+  checkConnection() {
+    if (this.IrSdkWrapper.isInitialized() && this.IrSdkWrapper.isConnected()) {
+      if (!this.connected) {
+        this.connected = true
         /**
           iRacing, sim, is started
           @event iracing#Connected
@@ -353,8 +391,8 @@ function JsIrSdk (IrSdkWrapper, opts) {
         self.emit('update', {type: 'Connected', timestamp: new Date()})
       }
     } else {
-      if (connected) {
-        connected = false
+      if (this.connected) {
+        this.connected = false
         /**
           iRacing, sim, was closed
           @event iracing#Disconnected
@@ -365,23 +403,23 @@ function JsIrSdk (IrSdkWrapper, opts) {
         */
         self.emit('update', {type: 'Disconnected', timestamp: new Date()})
 
-        IrSdkWrapper.shutdown()
+        this.IrSdkWrapper.shutdown()
         self.telemetryDescription = null
       }
     }
   }
 
-  var telemetryIntervalId = setInterval(function () {
-    checkConnection()
-    if (connected && IrSdkWrapper.updateTelemetry()) {
+  telemetryIntervalId = setInterval(function () {
+    self.checkConnection()
+    if (self.connected && self.IrSdkWrapper.updateTelemetry()) {
       var now = new Date() // date gives ms accuracy
-      self.telemetry = IrSdkWrapper.getTelemetry()
+      self.telemetry = self.IrSdkWrapper.getTelemetry()
       // replace ctime timestamp
       self.telemetry.timestamp = now
 
       setImmediate(function () {
         if (!self.telemetryDescription) {
-          self.telemetryDescription = IrSdkWrapper.getTelemetryDescription()
+          self.telemetryDescription = self.IrSdkWrapper.getTelemetryDescription()
           /**
             Telemetry description, contains description of available telemetry values
             @event iracing#TelemetryDescription
@@ -405,17 +443,17 @@ function JsIrSdk (IrSdkWrapper, opts) {
         self.emit('update', {type: 'Telemetry', data: self.telemetry.values, timestamp: now})
       })
     }
-  }, opts.telemetryUpdateInterval)
+  }, this.opts.telemetryUpdateInterval)
 
-  var sessionInfoIntervalId = setInterval(function () {
-    checkConnection()
-    if (connected && IrSdkWrapper.updateSessionInfo()) {
+  sessionInfoIntervalId = setInterval(function () {
+    self.checkConnection()
+    if (self.connected && self.IrSdkWrapper.updateSessionInfo()) {
       var now = new Date()
-      var sessionInfo = IrSdkWrapper.getSessionInfo()
+      var sessionInfo = self.IrSdkWrapper.getSessionInfo()
       var doc
       setImmediate(function () {
         try {
-          doc = parseSessionInfo(sessionInfo)
+          doc = self.parseSessionInfo(sessionInfo)
         } catch (ex) {
           // TODO: log faulty yaml
           console.error('js-irsdk: yaml error: \n' + ex)
@@ -436,7 +474,7 @@ function JsIrSdk (IrSdkWrapper, opts) {
         }
       })
     }
-  }, opts.sessionInfoUpdateInterval)
+  }, this.opts.sessionInfoUpdateInterval)
 
   /**
     any update event
@@ -447,50 +485,25 @@ function JsIrSdk (IrSdkWrapper, opts) {
     *   console.log(evt)
     * })
     */
-  self.on('update', evt => {
-    // fire old events as well.
-    const timestamp = evt.timestamp
-    const data = evt.data
-    const type = evt.type
 
-    switch (type) {
-      case 'SessionInfo':
-        self.emit('SessionInfo', {timestamp, data})
-        break
-      case 'Telemetry':
-        self.emit('Telemetry', {timestamp, values: data})
-        break
-      case 'TelemetryDescription':
-        self.emit('TelemetryDescription', data)
-        break
-      case 'Connected':
-        self.emit('Connected')
-        break
-      case 'Disconnected':
-        self.emit('Disconnected')
-        break
-      default:
-        break
-    }
-  })
 
   /**
     Stops JsIrSdk, no new events are fired after calling this
     @method
     @private
   */
-  this._stop = function () {
-    clearInterval(telemetryIntervalId)
-    clearInterval(sessionInfoIntervalId)
-    clearInterval(startIntervalId)
-    IrSdkWrapper.shutdown()
+  _stop() {
+    clearInterval(this.telemetryIntervalId)
+    clearInterval(this.sessionInfoIntervalId)
+    clearInterval(this.startIntervalId)
+    this.IrSdkWrapper.shutdown()
   }
 
   /** pad car number
     @function
     @private
   */
-  function padCarNum (numStr) {
+  padCarNum(numStr) {
     if (typeof numStr === 'string') {
       var num = parseInt(numStr)
       var zeros = numStr.length - num.toString().length
@@ -504,10 +517,6 @@ function JsIrSdk (IrSdkWrapper, opts) {
     }
   }
 }
-
-util.inherits(JsIrSdk, events.EventEmitter)
-
-module.exports = JsIrSdk
 
 function stringToEnum (input, enumObj) {
   var enumKey = Object.keys(enumObj).find(function (key) {

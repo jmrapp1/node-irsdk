@@ -49,7 +49,7 @@ Local<Value> NodeIrSdk::convertTelemetryVarToObject(IRSDKWrapper::TelemetryVar &
     Local<Array> arr = Nan::New<Array>(var.header->count);
     for (int i = 0; i < var.header->count; ++i)
     {
-      arr->Set(i, convertTelemetryValueToObject(var, i));
+      arr->Set(Isolate::GetCurrent()->GetCurrentContext(), i, convertTelemetryValueToObject(var, i));
     }
     return arr;
   }

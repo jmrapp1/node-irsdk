@@ -6,7 +6,15 @@
 [![devDependencies](https://img.shields.io/david/dev/apihlaja/node-irsdk.svg)](https://david-dm.org/apihlaja/node-irsdk?type=dev)
 [![npm version](https://img.shields.io/npm/v/node-irsdk.svg)](https://www.npmjs.com/package/node-irsdk)
 
-Unofficial [iRacing](http://www.iracing.com/) SDK implementation for Node.js.
+Unofficial [iRacing](http://www.iracing.com/) SDK implementation for Node.js. 
+
+# IMPORTANT
+THIS ONLY SUPPORTS ELECTRON 32.0.0 WHICH USES:
+- NODE 20.16.0
+- V8 12.8
+as defined [here](https://www.electronjs.org/blog/electron-32-0)
+
+---
 
 **node-irsdk** provides data access (live telemetry and session info) and most of available commands. You can find some usage examples from [utils](https://github.com/apihlaja/node-irsdk/tree/master/utils) directory, and there is some [data samples](https://github.com/apihlaja/node-irsdk/tree/master/sample-data) too.
 
