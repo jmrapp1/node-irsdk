@@ -15,6 +15,5 @@
     "typeRoots": ["node_modules/@types"],
     "types": ["events", "node"]
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+  "include": ["src/**/*"]
 }
