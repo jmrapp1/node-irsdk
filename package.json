@@ -36,6 +36,7 @@
     "stream": "^0.0.3"
   },
   "devDependencies": {
+    "@types/events": "^3.0.3",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.16.0",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
