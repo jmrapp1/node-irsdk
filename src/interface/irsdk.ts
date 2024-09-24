@@ -1,9 +1,9 @@
 // @ts-ignore
 import IrSdkNodeWrapper from '../../build/Release/IrSdkNodeBindings.node';
 
-import * as events from 'events';
 import * as yaml from 'js-yaml';
 import { IRACING_CONSTS } from './consts';
+import { EventEmitter } from "events";
 
 let instance: Irsdk;
 
@@ -64,7 +64,7 @@ function createSessionInfoParser () {
   @fires iracing#TelemetryDescription
   @fires iracing#SessionInfo
 */
-export class Irsdk extends events.EventEmitter {
+export class Irsdk extends EventEmitter {
 
   parseSessionInfo: any;
   connected = false;
@@ -83,7 +83,7 @@ export class Irsdk extends events.EventEmitter {
     this.self = this;
     this.execCmd = this.IrSdkWrapper.sendCmd;
 
-    events.EventEmitter.call(this)
+    EventEmitter.call(this)
 
     this.telemetryIntervalIdFunc = this.telemetryIntervalIdFunc.bind(this);
     this.sessionInfoIntervalIdFunc = this.sessionInfoIntervalIdFunc.bind(this);
@@ -101,7 +101,7 @@ export class Irsdk extends events.EventEmitter {
       }
     }, 10000)
 
-    this.on('update', evt => {
+    this.on('update', (evt: any) => {
       // fire old events as well.
       const timestamp = evt.timestamp
       const data = evt.data

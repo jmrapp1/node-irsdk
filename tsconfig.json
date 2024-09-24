@@ -12,9 +12,8 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "rootDir": "src",
-    "typeRoots": [
-      "node_modules/@types"
-    ],
+    "typeRoots": ["node_modules/@types"],
+    "types": ["events", "node"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules"]
