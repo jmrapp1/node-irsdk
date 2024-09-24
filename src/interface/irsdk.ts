@@ -1,8 +1,32 @@
-import * as events from 'events';
-import * as Consts from './IrSdkConsts';
-import * as yaml from 'js-yaml';
+// @ts-ignore
+import IrSdkNodeWrapper from '../../build/Release/IrSdkNodeBindings.node';
 
-var BroadcastMsg = Consts.BroadcastMsg
+import * as events from 'events';
+import * as yaml from 'js-yaml';
+import { IRACING_CONSTS } from './consts';
+
+let instance: Irsdk;
+
+export function init(opts: any) {
+  if (!instance) {
+    instance = new Irsdk(IrSdkNodeWrapper,
+        Object.assign({
+          telemetryUpdateInterval: 0,
+          sessionInfoUpdateInterval: 0
+        }, opts))
+  }
+  return instance
+}
+
+/**
+ Get initialized instance of JsIrSdk
+ @function
+ @static
+ @returns {iracing} Running instance of JsIrSdk
+ */
+export function getInstance() {
+  return init({})
+}
 
 /** Default parser used for SessionInfo YAML
   Fixes TeamName issue, uses js-yaml for actual parsing
@@ -11,8 +35,8 @@ var BroadcastMsg = Consts.BroadcastMsg
   @returns {Object} parsed session info or falsy
 */
 function createSessionInfoParser () {
-  return function (sessionInfoStr) {
-    var fixedYamlStr = sessionInfoStr.replace(/TeamName: ([^\n]+)/g, function (match, p1) {
+  return function (sessionInfoStr: any) {
+    var fixedYamlStr = sessionInfoStr.replace(/TeamName: ([^\n]+)/g, function (match: any, p1: any) {
       if ((p1[0] === '"' && p1[p1.length - 1] === '"') ||
           (p1[0] === "'" && p1[p1.length - 1] === "'")) {
         return match // skip if quoted already
@@ -21,7 +45,7 @@ function createSessionInfoParser () {
         return "TeamName: '" + p1.replace(/'/g, "''") + "'"
       }
     })
-    return yaml.safeLoad(fixedYamlStr)
+    return yaml.load(fixedYamlStr)
   }
 }
 
@@ -40,21 +64,32 @@ function createSessionInfoParser () {
   @fires iracing#TelemetryDescription
   @fires iracing#SessionInfo
 */
-export class JsIrSdk extends events.EventEmitter {
+export class Irsdk extends events.EventEmitter {
 
-  parseSessionInfo;
+  parseSessionInfo: any;
   connected = false;
-  startIntervalId;
-  IrSdkWrapper;
-  self;
+  startIntervalId: any;
+  IrSdkWrapper: any;
+  self: any;
+  opts: any;
+  execCmd: any;
+  telemetryIntervalId: any;
+  sessionInfoIntervalId: any;
 
-  constructor(IrSdkWrapper, opts) {
+  constructor(IrSdkWrapper: any, opts: any) {
     super()
     this.IrSdkWrapper = IrSdkWrapper;
     this.opts = opts;
     this.self = this;
+    this.execCmd = this.IrSdkWrapper.sendCmd;
 
     events.EventEmitter.call(this)
+
+    this.telemetryIntervalIdFunc = this.telemetryIntervalIdFunc.bind(this);
+    this.sessionInfoIntervalIdFunc = this.sessionInfoIntervalIdFunc.bind(this);
+
+    this.telemetryIntervalId = setInterval(this.telemetryIntervalIdFunc, this.opts.telemetryUpdateInterval)
+    this.sessionInfoIntervalId = setInterval(this.sessionInfoIntervalIdFunc, this.opts.sessionInfoUpdateInterval)
 
     this.parseSessionInfo = opts.sessionInfoParser
     if (!this.parseSessionInfo) this.parseSessionInfo = createSessionInfoParser()
@@ -96,21 +131,6 @@ export class JsIrSdk extends events.EventEmitter {
     IrSdkWrapper.start()
   }
 
-  /** Execute any of available commands, excl. FFB command
-    @method
-    @param {Integer} msgId Message id
-    @param {Integer} [arg1] 1st argument
-    @param {Integer} [arg2] 2nd argument
-    @param {Integer} [arg3] 3rd argument
-  */
-  execCmd = this.IrSdkWrapper.sendCmd
-
-  /** iRacing SDK related constants
-    @type IrSdkConsts
-    @instance
-  */
-  Consts = Consts
-
   /** Camera controls
     @type {Object}
   */
@@ -124,8 +144,8 @@ export class JsIrSdk extends events.EventEmitter {
       * var state = States.CamToolActive | States.UIHidden | States.UseMouseAimMode
       * iracing.camControls.setState(state)
     */
-    setState: function (state) {
-      self.execCmd(BroadcastMsg.CamSetState, state)
+    setState(state: any) {
+      this.execCmd(IRACING_CONSTS.BroadcastMsg.CamSetState, state)
     },
     /** Switch camera, focus on car
       @method
@@ -146,19 +166,19 @@ export class JsIrSdk extends events.EventEmitter {
       * // show car #2 using cam group 3
       * iracing.camControls.switchToCar(2, 3)
     */
-    switchToCar: function (carNum, camGroupNum, camNum) {
+    switchToCar(carNum: any, camGroupNum: any, camNum: any) {
       camGroupNum = camGroupNum | 0
       camNum = camNum | 0
 
       if (typeof carNum === 'string') {
         if (isNaN(parseInt(carNum))) {
-          carNum = stringToEnum(carNum, Consts.CamFocusAt)
+          carNum = stringToEnum(carNum, IRACING_CONSTS.CamFocusAt)
         } else {
-          carNum = padCarNum(carNum)
+          carNum = this.padCarNum(carNum)
         }
       }
       if (Number.isInteger(carNum)) {
-        self.execCmd(BroadcastMsg.CamSwitchNum, carNum, camGroupNum, camNum)
+        this.execCmd(IRACING_CONSTS.BroadcastMsg.CamSwitchNum, carNum, camGroupNum, camNum)
       }
     },
     /** Switch camera, focus on position
@@ -169,15 +189,15 @@ export class JsIrSdk extends events.EventEmitter {
 
       @example iracing.camControls.switchToPos(2) // show P2
     */
-    switchToPos: function (position, camGroupNum, camNum) {
+    switchToPos(position: any, camGroupNum: any, camNum: any) {
       camGroupNum = camGroupNum | 0
       camNum = camNum | 0
 
       if (typeof position === 'string') {
-        position = stringToEnum(position, Consts.CamFocusAt)
+        position = stringToEnum(position, IRACING_CONSTS.CamFocusAt)
       }
       if (Number.isInteger(position)) {
-        self.execCmd(BroadcastMsg.CamSwitchPos, position, camGroupNum, camNum)
+        this.execCmd(IRACING_CONSTS.BroadcastMsg.CamSwitchPos, position, camGroupNum, camNum)
       }
     }
   }
@@ -185,72 +205,71 @@ export class JsIrSdk extends events.EventEmitter {
   /** Replay and playback controls
     @type {Object}
   */
-  playbackControls = {
     /** Play replay
       @method
       @example iracing.playbackControls.play()
     */
-    play: function () {
-      self.execCmd(BroadcastMsg.ReplaySetPlaySpeed, 1, 0)
-    },
+    play() {
+      this.execCmd(IRACING_CONSTS.BroadcastMsg.ReplaySetPlaySpeed, 1, 0)
+    }
     /** Pause replay
       @method
       @example iracing.playbackControls.pause()
     */
-    pause: function () {
-      self.execCmd(BroadcastMsg.ReplaySetPlaySpeed, 0, 0)
-    },
+    pause() {
+      this.execCmd(IRACING_CONSTS.BroadcastMsg.ReplaySetPlaySpeed, 0, 0)
+    }
     /** fast-forward replay
       @method
       @param {Integer} [speed=2] FF speed, something between 2-16 works
       @example iracing.playbackControls.fastForward() // double speed FF
     */
-    fastForward: function (speed) {
+    fastForward(speed: number) {
       speed = speed || 2
-      self.execCmd(BroadcastMsg.ReplaySetPlaySpeed, speed, 0)
-    },
+      this.execCmd(IRACING_CONSTS.BroadcastMsg.ReplaySetPlaySpeed, speed, 0)
+    }
     /** rewind replay
       @method
       @param {Integer} [speed=2] RW speed, something between 2-16 works
       @example iracing.playbackControls.rewind() // double speed RW
     */
-    rewind: function (speed) {
+    rewind(speed: number) {
       speed = speed || 2
-      self.execCmd(BroadcastMsg.ReplaySetPlaySpeed, -1 * speed, 0)
-    },
+      this.execCmd(IRACING_CONSTS.BroadcastMsg.ReplaySetPlaySpeed, -1 * speed, 0)
+    }
     /** slow-forward replay, slow motion
       @method
       @param {Integer} [divider=2] divider of speed, something between 2-17 works
       @example iracing.playbackControls.slowForward(2) // half speed
     */
-    slowForward: function (divider) {
+    slowForward(divider: number) {
       divider = divider || 2
       divider -= 1
-      self.execCmd(BroadcastMsg.ReplaySetPlaySpeed, divider, 1)
-    },
+      this.execCmd(IRACING_CONSTS.BroadcastMsg.ReplaySetPlaySpeed, divider, 1)
+    }
     /** slow-backward replay, reverse slow motion
       @method
       @param {Integer} [divider=2] divider of speed, something between 2-17 works
       @example iracing.playbackControls.slowBackward(2) // half speed RW
     */
-    slowBackward: function (divider) {
+    slowBackward(divider: number) {
       divider = divider || 2
       divider -= 1
-      self.execCmd(BroadcastMsg.ReplaySetPlaySpeed, -1 * divider, 1)
-    },
+      this.execCmd(IRACING_CONSTS.BroadcastMsg.ReplaySetPlaySpeed, -1 * divider, 1)
+    }
     /** Search things from replay
       @method
       @param {IrSdkConsts.RpySrchMode} searchMode what to search
       @example iracing.playbackControls.search('nextIncident')
     */
-    search: function (searchMode) {
+    search(searchMode: any) {
       if (typeof searchMode === 'string') {
-        searchMode = stringToEnum(searchMode, Consts.RpySrchMode)
+        searchMode = stringToEnum(searchMode, IRACING_CONSTS.RpySrchMode)
       }
       if (Number.isInteger(searchMode)) {
-        self.execCmd(BroadcastMsg.ReplaySearch, searchMode)
+        this.execCmd(IRACING_CONSTS.BroadcastMsg.ReplaySearch, searchMode)
       }
-    },
+    }
     /** Search timestamp
       @method
       @param {Integer} sessionNum Session number
@@ -259,31 +278,30 @@ export class JsIrSdk extends events.EventEmitter {
       * // jump to 2nd minute of 3rd session
       * iracing.playbackControls.searchTs(2, 2*60*1000)
     */
-    searchTs: function (sessionNum, sessionTimeMS) {
-      self.execCmd(BroadcastMsg.ReplaySearchSessionTime, sessionNum, sessionTimeMS)
-    },
+    searchTs(sessionNum: number, sessionTimeMS: number) {
+      this.execCmd(IRACING_CONSTS.BroadcastMsg.ReplaySearchSessionTime, sessionNum, sessionTimeMS)
+    }
     /** Go to frame. Frame counting can be relative to begin, end or current.
       @method
       @param {Integer} frameNum Frame number
       @param {IrSdkConsts.RpyPosMode} rpyPosMode Is frame number relative to begin, end or current frame
       @example iracing.playbackControls.searchFrame(1, 'current') // go to 1 frame forward
     */
-    searchFrame: function (frameNum, rpyPosMode) {
+    searchFrame(frameNum: number, rpyPosMode: any) {
       if (typeof rpyPosMode === 'string') {
-        rpyPosMode = stringToEnum(rpyPosMode, Consts.RpyPosMode)
+        rpyPosMode = stringToEnum(rpyPosMode, IRACING_CONSTS.RpyPosMode)
       }
       if (Number.isInteger(rpyPosMode)) {
-        self.execCmd(BroadcastMsg.ReplaySetPlayPosition, rpyPosMode, frameNum)
+        this.execCmd(IRACING_CONSTS.BroadcastMsg.ReplaySetPlayPosition, rpyPosMode, frameNum)
       }
     }
-  }
 
   /** Reload all car textures
     @method
     @example iracing.reloadTextures() // reload all paints
   */
   reloadTextures() {
-    this.execCmd(BroadcastMsg.ReloadTextures, Consts.ReloadTexturesMode.All)
+    this.execCmd(IRACING_CONSTS.BroadcastMsg.ReloadTextures, IRACING_CONSTS.ReloadTexturesMode.All)
   }
 
   /** Reload car's texture
@@ -291,8 +309,8 @@ export class JsIrSdk extends events.EventEmitter {
     @param {Integer} carIdx car to reload
     @example iracing.reloadTexture(1) // reload paint of carIdx=1
   */
-  reloadTexture(carIdx) {
-    this.execCmd(BroadcastMsg.ReloadTextures, Consts.ReloadTexturesMode.CarIdx, carIdx)
+  reloadTexture(carIdx: number) {
+    this.execCmd(IRACING_CONSTS.BroadcastMsg.ReloadTextures, IRACING_CONSTS.ReloadTexturesMode.CarIdx, carIdx)
   }
 
   /** Execute chat command
@@ -300,13 +318,13 @@ export class JsIrSdk extends events.EventEmitter {
     @param {Integer} [arg] Command argument, if needed
     @example iracing.execChatCmd('cancel') // close chat window
   */
-  execChatCmd(cmd, arg) {
+  execChatCmd(cmd: any, arg: any) {
     arg = arg || 0
     if (typeof cmd === 'string') {
-      cmd = stringToEnum(cmd, Consts.ChatCommand)
+      cmd = stringToEnum(cmd, IRACING_CONSTS.ChatCommand)
     }
     if (Number.isInteger(cmd)) {
-      this.execCmd(BroadcastMsg.ChatComand, cmd, arg)
+      this.execCmd(IRACING_CONSTS.BroadcastMsg.ChatComand, cmd, arg)
     }
   }
 
@@ -314,7 +332,7 @@ export class JsIrSdk extends events.EventEmitter {
     @param {Integer} num Macro's number (0-15)
     @example iracing.execChatMacro(1) // macro 1
   */
-  execChatMacro(num) {
+  execChatMacro(num: number) {
     this.execChatCmd('macro', num)
   }
 
@@ -328,13 +346,13 @@ export class JsIrSdk extends events.EventEmitter {
     * iracing.execPitCmd('lf') // new left front
     * iracing.execPitCmd('lr', 200) // new left rear, 200 kPa
   */
-  execPitCmd(cmd, arg) {
+  execPitCmd(cmd: any, arg: any) {
     arg = arg || 0
     if (typeof cmd === 'string') {
-      cmd = stringToEnum(cmd, Consts.PitCommand)
+      cmd = stringToEnum(cmd, IRACING_CONSTS.PitCommand)
     }
     if (Number.isInteger(cmd)) {
-      this.execCmd(BroadcastMsg.PitCommand, cmd, arg)
+      this.execCmd(IRACING_CONSTS.BroadcastMsg.PitCommand, cmd, arg)
     }
   }
 
@@ -342,12 +360,12 @@ export class JsIrSdk extends events.EventEmitter {
     @param {IrSdkConsts.TelemCommand} cmd Command: start/stop/restart
     @example iracing.execTelemetryCmd('restart')
   */
-  execTelemetryCmd(cmd) {
+  execTelemetryCmd(cmd: any) {
     if (typeof cmd === 'string') {
-      cmd = stringToEnum(cmd, Consts.TelemCommand)
+      cmd = stringToEnum(cmd, IRACING_CONSTS.TelemCommand)
     }
     if (Number.isInteger(cmd)) {
-      this.execCmd(BroadcastMsg.TelemCommand, cmd)
+      this.execCmd(IRACING_CONSTS.BroadcastMsg.TelemCommand, cmd)
     }
   }
 
@@ -362,17 +380,17 @@ export class JsIrSdk extends events.EventEmitter {
   /** Latest telemetry, may be null or undefined
 
   */
-  telemetry = null
+  telemetry: any = null
 
   /** Latest telemetry, may be null or undefined
 
   */
-  telemetryDescription = null
+  telemetryDescription: any = null
 
   /** Latest telemetry, may be null or undefined
 
   */
-  sessionInfo = null
+  sessionInfo: any = null
 
   checkConnection() {
     if (this.IrSdkWrapper.isInitialized() && this.IrSdkWrapper.isConnected()) {
@@ -386,7 +404,7 @@ export class JsIrSdk extends events.EventEmitter {
           *   console.log(evt)
           * })
         */
-        self.emit('update', {type: 'Connected', timestamp: new Date()})
+        this.emit('update', {type: 'Connected', timestamp: new Date()})
       }
     } else {
       if (this.connected) {
@@ -399,90 +417,84 @@ export class JsIrSdk extends events.EventEmitter {
           *   console.log(evt)
           * })
         */
-        self.emit('update', {type: 'Disconnected', timestamp: new Date()})
+        this.emit('update', {type: 'Disconnected', timestamp: new Date()})
 
         this.IrSdkWrapper.shutdown()
-        self.telemetryDescription = null
+        this.telemetryDescription = null
       }
     }
   }
 
-  telemetryIntervalId = setInterval(function () {
-    self.checkConnection()
-    if (self.connected && self.IrSdkWrapper.updateTelemetry()) {
+  telemetryIntervalIdFunc() {
+    this.checkConnection()
+    if (this.connected && this.IrSdkWrapper.updateTelemetry()) {
       var now = new Date() // date gives ms accuracy
-      self.telemetry = self.IrSdkWrapper.getTelemetry()
+      this.telemetry = this.IrSdkWrapper.getTelemetry()
       // replace ctime timestamp
-      self.telemetry.timestamp = now
+      this.telemetry.timestamp = now
+
+      const ref = this;
 
       setImmediate(function () {
-        if (!self.telemetryDescription) {
-          self.telemetryDescription = self.IrSdkWrapper.getTelemetryDescription()
+        if (!ref.telemetryDescription) {
+          ref.telemetryDescription = ref.IrSdkWrapper.getTelemetryDescription()
           /**
-            Telemetry description, contains description of available telemetry values
-            @event iracing#TelemetryDescription
-            @type Object
-            @example
-            * iracing.on('TelemetryDescription', function (data) {
-            *   console.log(evt)
-            * })
-          */
-          self.emit('update', {type: 'TelemetryDescription', data: self.telemetryDescription, timestamp: now})
+           Telemetry description, contains description of available telemetry values
+           @event iracing#TelemetryDescription
+           @type Object
+           @example
+           * iracing.on('TelemetryDescription', function (data) {
+           *   console.log(evt)
+           * })
+           */
+          ref.emit('update', {type: 'TelemetryDescription', data: ref.telemetryDescription, timestamp: now})
         }
         /**
-          Telemetry update
-          @event iracing#Telemetry
-          @type Object
-          @example
-          * iracing.on('Telemetry', function (evt) {
-          *   console.log(evt)
-          * })
-        */
-        self.emit('update', {type: 'Telemetry', data: self.telemetry.values, timestamp: now})
+         Telemetry update
+         @event iracing#Telemetry
+         @type Object
+         @example
+         * iracing.on('Telemetry', function (evt) {
+         *   console.log(evt)
+         * })
+         */
+        ref.emit('update', {type: 'Telemetry', data: ref.telemetry.values, timestamp: now})
       })
     }
-  }, this.opts.telemetryUpdateInterval)
+  }
 
-  sessionInfoIntervalId = setInterval(function () {
-    self.checkConnection()
-    if (self.connected && self.IrSdkWrapper.updateSessionInfo()) {
+  sessionInfoIntervalIdFunc() {
+    this.checkConnection()
+    if (this.connected && this.IrSdkWrapper.updateSessionInfo()) {
       var now = new Date()
-      var sessionInfo = self.IrSdkWrapper.getSessionInfo()
-      var doc
+      var sessionInfo = this.IrSdkWrapper.getSessionInfo()
+      var doc: any
+
+      const ref = this;
       setImmediate(function () {
         try {
-          doc = self.parseSessionInfo(sessionInfo)
+          doc = ref.parseSessionInfo(sessionInfo)
         } catch (ex) {
           // TODO: log faulty yaml
           console.error('js-irsdk: yaml error: \n' + ex)
         }
 
         if (doc) {
-          self.sessionInfo = { timestamp: now, data: doc }
+          ref.sessionInfo = { timestamp: now, data: doc }
           /**
-            SessionInfo update
-            @event iracing#SessionInfo
-            @type Object
-            @example
-            * iracing.on('SessionInfo', function (evt) {
-            *   console.log(evt)
-            * })
-          */
-          self.emit('update', {type: 'SessionInfo', data: self.sessionInfo.data, timestamp: now})
+           SessionInfo update
+           @event iracing#SessionInfo
+           @type Object
+           @example
+           * iracing.on('SessionInfo', function (evt) {
+           *   console.log(evt)
+           * })
+           */
+          ref.emit('update', {type: 'SessionInfo', data: ref.sessionInfo.data, timestamp: now})
         }
       })
     }
-  }, this.opts.sessionInfoUpdateInterval)
-
-  /**
-    any update event
-    @event iracing#update
-    @type Object
-    @example
-    * iracing.on('update', function (evt) {
-    *   console.log(evt)
-    * })
-    */
+  }
 
 
   /**
@@ -501,7 +513,7 @@ export class JsIrSdk extends events.EventEmitter {
     @function
     @private
   */
-  padCarNum(numStr) {
+  padCarNum(numStr: any) {
     if (typeof numStr === 'string') {
       var num = parseInt(numStr)
       var zeros = numStr.length - num.toString().length
@@ -516,7 +528,7 @@ export class JsIrSdk extends events.EventEmitter {
   }
 }
 
-function stringToEnum (input, enumObj) {
+function stringToEnum (input: any, enumObj: any) {
   var enumKey = Object.keys(enumObj).find(function (key) {
     return key.toLowerCase() === input.toLowerCase()
   })

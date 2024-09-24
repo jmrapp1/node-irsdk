@@ -4,7 +4,7 @@
   @namespace
   @constant
   */
-var IrSdkConsts = {
+export const IRACING_CONSTS = {
   /**
     Available command messages.
     @enum
@@ -158,5 +158,3 @@ var IrSdkConsts = {
     Driver: 0
   }
 }
-
-module.exports = IrSdkConsts

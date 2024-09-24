@@ -2,10 +2,11 @@
   "name": "node-irsdk",
   "version": "2.1.7",
   "description": "iRacing SDK implementation for Node.js",
-  "main": "src/node-irsdk.js",
-  "type": "module",
+  "main": "dist/interface/index.js",
   "scripts": {
-    "install": "prebuild-install || node-gyp rebuild --target=27.0.0 --arch=x64 --dist-url=https://electronjs.org/headers",
+    "install": "rimraf ./build && prebuild-install || node-gyp rebuild --target=27.0.0 --arch=x64 --dist-url=https://electronjs.org/headers",
+    "postinstall": "npm run build-js",
+    "build-js": "rimraf ./dist && tsc",
     "prebuild": "prebuild --all --strip",
     "prebuild-upload": "prebuild --all --strip -u %GH_TOKEN%",
     "test": "npm run lint && npm run mocha",
@@ -35,16 +36,24 @@
     "stream": "^0.0.3"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.16.0",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
     "chai": "^4.2.0",
     "changelog": "1.*",
     "jsdoc-to-markdown": "^5.0.0",
     "mocha": "^6.1.4",
     "moment": "^2.19.3",
     "prebuild": "9.0.1",
+    "rimraf": "^6.0.1",
     "sandboxed-module": "2.0.*",
     "sinon": "^7.3.2",
     "sinon-chai": "3.*",
-    "standard": "8.6.0"
+    "standard": "8.6.0",
+    "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.2",
+    "typescript": "~4.5.4"
   },
   "standard": {
     "globals": [

@@ -94,6 +94,7 @@ void NodeIrSdk::convertVarHeaderToObject(IRSDKWrapper::TelemetryVar &var, Local<
 
 Local<Value> NodeIrSdk::getMaskedValues(const int &val, char *unit)
 {
+  // cerr << "Got bitField: " << unit << endl;
   if (strcmp(unit, "irsdk_Flags") == 0)
   {
     return getValueArr(val, FLAG_MASKS);
@@ -113,6 +114,10 @@ Local<Value> NodeIrSdk::getMaskedValues(const int &val, char *unit)
   if (strcmp(unit, "irsdk_CarLeftRight") == 0)
   {
     return getValueArr(val, CAR_BESIDE);
+  }
+  if (strcmp(unit, "irsdk_PaceFlags") == 0)
+  {
+    return getValueArr(val, PACE_FLAGS);
   }
   cerr << "Missing converter for bitField: " << unit << endl;
   return Nan::New(static_cast<int32_t>(val));

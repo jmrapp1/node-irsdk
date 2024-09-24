@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define IRSDK_DEFINES_H
 
 /*
- The IRSDK is a simple api that lets clients access telemetry data from the 
+ The IRSDK is a simple api that lets clients access telemetry data from the
  iRacing simulator. It is broken down into several parts:
 
  - Live data
@@ -40,16 +40,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    file, without needing an external api.
 
    There are two different types of data that the telemetry outputs,
-   sessionInfo and variables: 
-   
+   sessionInfo and variables:
+
    Session info is for data that only needs to be updated every once in a
    while.  This data is output as a YAML formatted string.
 
    Variables, on the other hand, are output at a rate of 60 times a second.
    The varHeader struct defines each variable that the sim will output, while
    the varData struct gives details about the current line buffer that the vars
-   are being written into.  Each variable is packed into a binary array with 
-   an offset and length stored in the varHeader.  The number of variables 
+   are being written into.  Each variable is packed into a binary array with
+   an offset and length stored in the varHeader.  The number of variables
    available can change depending on the car or session loaded.  But once the
    sim is running the variable list is locked down and will not change during a
    session.
@@ -70,12 +70,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    of the live data.
 
    It is stored as an irsdk_header followed immediately by an irsdk_diskSubHeader.
-   After that the offsets in the irsdk_header point to the sessionInfo string, 
+   After that the offsets in the irsdk_header point to the sessionInfo string,
    the varHeader, and the varBuffer.
 
  - Remote Conrol
    You can control the camera selections and playback of a replay tape, from
-   any external application by sending a windows message with the 
+   any external application by sending a windows message with the
    irsdk_broadcastMsg() function.
 */
 
@@ -90,7 +90,7 @@ static const _TCHAR IRSDK_BROADCASTMSGNAME[]   = _T("IRSDK_BROADCASTMSG");
 static const int IRSDK_MAX_BUFS = 4;
 static const int IRSDK_MAX_STRING = 32;
 // descriptions can be longer than max_string!
-static const int IRSDK_MAX_DESC = 64; 
+static const int IRSDK_MAX_DESC = 64;
 
 // define markers for unlimited session lap and time
 static const int IRSDK_UNLIMITED_LAPS = 32767;
@@ -135,7 +135,7 @@ static const int irsdk_VarTypeBytes[irsdk_ETCount] =
 };
 
 // bit fields
-enum irsdk_EngineWarnings 
+enum irsdk_EngineWarnings
 {
 	irsdk_waterTempWarning		= 0x01,
 	irsdk_fuelPressureWarning	= 0x02,
@@ -181,7 +181,7 @@ enum irsdk_Flags
 };
 
 
-// status 
+// status
 enum irsdk_TrkLoc
 {
 	irsdk_NotInWorld = -1,
@@ -235,6 +235,13 @@ enum irsdk_SessionState
 	irsdk_StateRacing,
 	irsdk_StateCheckered,
 	irsdk_StateCoolDown
+};
+
+enum irsdk_PaceFlags
+{
+	irsdk_PaceFlagsEndOfLine = 0x01,
+	irsdk_PaceFlagsFreePass = 0x02,
+	irsdk_PaceFlagsWavedAround = 0x04,
 };
 
 enum irsdk_CarLeftRight
@@ -380,13 +387,13 @@ int irsdk_varNameToOffset(const char *name);
 
 //----
 // Remote controll the sim by sending these windows messages
-// camera and replay commands only work when you are out of your car, 
+// camera and replay commands only work when you are out of your car,
 // pit commands only work when in your car
-enum irsdk_BroadcastMsg 
+enum irsdk_BroadcastMsg
 {
 	irsdk_BroadcastCamSwitchPos = 0,      // car position, group, camera
 	irsdk_BroadcastCamSwitchNum,	      // driver #, group, camera
-	irsdk_BroadcastCamSetState,           // irsdk_CameraState, unused, unused 
+	irsdk_BroadcastCamSetState,           // irsdk_CameraState, unused, unused
 	irsdk_BroadcastReplaySetPlaySpeed,    // speed, slowMotion, unused
 	irskd_BroadcastReplaySetPlayPosition, // irsdk_RpyPosMode, Frame Number (high, low)
 	irsdk_BroadcastReplaySearch,          // irsdk_RpySrchMode, unused, unused
