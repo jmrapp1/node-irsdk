@@ -530,10 +530,10 @@ export interface DriverInfo {
     DriverSetupLoadTypeName: string
     DriverSetupPassedTech: number
     DriverIncidentCount: number
-    Drivers: Driver[]
+    Drivers: SessionDriver[]
 }
 
-export interface Driver {
+export interface SessionDriver {
     CarIdx: number
     UserName: string
     AbbrevName: any
